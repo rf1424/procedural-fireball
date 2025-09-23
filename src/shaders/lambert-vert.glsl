@@ -75,7 +75,7 @@ vec3 randomGradient(vec3 p) {
 float perlin3D(vec3 st) {
     vec3 i = floor(st);
     vec3 f = fract(st);
-
+    
     vec3 u = f * f * f * (f * (f * 6.0 - 15.0) + 10.0);
 
     // 8 corners
@@ -102,7 +102,7 @@ float perlin3D(vec3 st) {
 
 float customFBM(vec3 st) {
     
-    float speed = 0.001;
+    float speed = 0.0005;
     // LEVEL 1
     float freq = 1.;
     float amp = 3.; 
@@ -123,6 +123,11 @@ float customFBM(vec3 st) {
     return baseNoise1 + Noise2;
 }
 
+float getBias(float time, float bias)
+{
+  return (time / ((((1.0/bias) - 2.0)*(1.0 - time))+1.0));
+}
+
 void main() {
     vec3 lightPos = normalize(vec3(0.0, 10.0, 10.0));
     
@@ -132,20 +137,21 @@ void main() {
     
     // general stretch in upper dir
     localPos.y += vs_Nor.y * customFBM(localPos.xyz) * max(0., localPos.y);
-    localPos.xz += sin(u_Time * 0.01 + localPos.y) * - u_swayLevel * max(- u_swayLevel - 0.1, localPos.y);
+
+    float swayTime = sin(u_Time * 0.005 + localPos.y) * 0.5 + 0.5;
+    swayTime = getBias(swayTime, 0.7);
+    localPos.xz += swayTime * - u_swayLevel * max(- u_swayLevel - 0.1, localPos.y);
     
     fs_Pos = localPos.xyz;
-    localPos.xyz -= vs_Nor.xyz * (vs_Pos.y * 0.5);
-    
-    //localPos += (sin(u_Time));
-    
+    float inset = vs_Pos.y * 0.5;
+    localPos.xyz -= vs_Nor.xyz * inset;
+
     // end of offsets -------------
     // nor
     mat3 invTranspose = mat3(u_ModelInvTr);
     fs_Nor = invTranspose * vec3(vs_Nor);  
-    // light vec
+  
     vec4 modelposition = u_Model * localPos; 
-    // fs_LightVec = lightPos - modelposition.xyz;
     
     gl_Position = u_ViewProj * modelposition;
 }

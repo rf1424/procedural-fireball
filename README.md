@@ -1,19 +1,18 @@
 # [Project 1: Noise](https://github.com/CIS-566-Fall-2022/hw01-fireball-base)
 
-My vertex shader makes use of 2 layers of value noise
-to create the bumy effect at the tip of the fire.
-It also insets the tip, and wiggles it 
-using an oscillating function.
+My vertex shader utilizes two layers of value noise to 
+generate the bumpy surface at the fire's tip. 
+It also insets the tip and applies a wiggly displacement using an oscillating function.
 
-My fragment shader makes use of fbm. I 
-use the uv coordinates and time to get this fbm
-effect in 2D space, and discard certain pixels 
-under the given threshold. I also offset the position using noise, find the length
-of the distorted position and use it to sample color
-from the cosine gradient function by iq.
+My fragment shader implements fractional Brownian motion (fbm). 
+I pass my UV coordinates and time, into this fbm function 
+and discard pixels below a specified threshold. 
+I also take the length of the noise-distorted position, and use to sample a color from iq's cosine gradient function.
+I have some presets of these gradients which the user
+can toggle using gradientType from the gui.
 
-I made presets of these gradients which the user
-can toggle using gradientType in the GUI.
+I make use of toolbox functions (cubic smoothstep, bias, gain, sin/cos gradient, ETC.) to remap values.
+
 
 
 ## Objective

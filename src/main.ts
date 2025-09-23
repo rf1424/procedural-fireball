@@ -15,18 +15,27 @@ const controls = {
   tesselations: 5,
   'Load Scene': loadScene, // A function pointer, essentially
    baseColor: [51, 51, 51],
-   gradientType : 0,
-   swayLevel : 0.25,
-   frameThreshold : 0.5
+   gradientType : 6,
+   swayLevel : 0.15,
+   frameThreshold: 0.5,
+   default: getDefaults
 };
 
 let icosphere: Icosphere;
 let icosphere2: Icosphere;
 let icosphere3: Icosphere;
-let square: Square;
+let square: Square
 let cube: Cube;
 let prevTesselations: number = 5;
 
+function getDefaults() {
+    controls.tesselations = 5;
+    controls.baseColor = [51, 51, 51];
+    controls.gradientType = 6;
+    controls.swayLevel = 0.15;
+    controls.frameThreshold = 0.5;
+    return;
+}
 function loadScene() {
   icosphere = new Icosphere(vec3.fromValues(0, 0, 0), 1, controls.tesselations);
   icosphere.create();
@@ -50,10 +59,10 @@ function main() {
   const gui = new DAT.GUI();
   gui.add(controls, 'tesselations', 0, 8).step(1);
   gui.add(controls, 'Load Scene');
-  gui.addColor(controls, "baseColor");
   gui.add(controls, 'gradientType', 0, 7,).step(1);
   gui.add(controls, 'swayLevel', 0.0, 1.0).step(0.01);
   gui.add(controls, 'frameThreshold', 0.1, 1.0).step(0.01);
+  gui.add(controls, 'default');
 
 
   // get canvas and webgl context

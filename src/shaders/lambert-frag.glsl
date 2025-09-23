@@ -65,6 +65,7 @@ float valueNoise3D( in vec3 x )
 {
     ivec3 i = ivec3(floor(x));
     vec3 f = fract(x);
+    // cubic smoothstep
     f = f*f*(3.0-2.0*f);
 	
     return mix(mix(mix( hash(i+ivec3(0,0,0)), 
@@ -98,6 +99,21 @@ float fbm(vec3 p) {
         seed *= freqIncreaseFactor;
     }
     return fbmSum;
+}
+
+float getBias(float time, float bias)
+{
+  return (time / ((((1.0/bias) - 2.0)*(1.0 - time))+1.0));
+}
+float  getGain(float time, float gain)
+{
+  if(time < 0.5) {
+    return getBias(time * 2.0, gain)/2.0;
+  }
+  else {
+    return getBias(time * 2.0 - 1.0,1.0 - gain)/2.0 + 0.5;
+  }
+    
 }
 
 vec3 getGradColor(float t, float gradType) {
@@ -139,8 +155,15 @@ vec3 getGradColor(float t, float gradType) {
         amp    = vec3(0.848, 1.108, 0.038);
         c      = vec3(-0.382, 0.588, 0.333);
         d      = vec3(0.368, -1.633, 0.535);
-    } else {
+    } else if (gradType < 7.0) {
         // 7. Magenta gradient (default)
+        
+         offset = vec3(0.504, 0.904, 0.768);
+         amp    = vec3(0.682, 0.219, 0.051);
+         c      = vec3(1.268, 0.307, 0.503);
+         d      = vec3(1.017, 0.367, 0.544);
+    }
+    else {
         offset = vec3(0.938, 0.328, 0.718);
         amp    = vec3(0.659, 0.438, 0.328);
         c      = vec3(0.388, 0.388, 0.296);
@@ -151,26 +174,28 @@ vec3 getGradColor(float t, float gradType) {
     float g0 = offset.g + amp.g * cos(2.0 * PI * (c.g * t + d.g));
     float b0 = offset.b + amp.b * cos(2.0 * PI * (c.b * t + d.b));
 
+    r0 = clamp(r0, 0.0, 1.0);
+    g0 = clamp(g0, 0.0, 1.0);
+    b0 = clamp(b0, 0.0, 1.0);
+    r0 = getGain(r0, 0.55);
+    g0 = getGain(g0, 0.55);
+    b0 = getGain(b0, 0.55);
     return vec3(r0, g0, b0);
 }
 
+
+
 void main() {
 	
-  vec3 color = vec3(0.5 * (fs_Pos.xy + vec2(1.0)), 0.5 * (sin(u_Time * 3.14159 * 0.01) + 1.0));
   vec2 seed = vec2(fs_Pos.x, fs_Pos.y) * 5.;
-  //color = color * abs(dot(fs_Nor, fs_LightVec));
-  // float colorNoise = perlin2D(fs_Pos.xy * 2. + u_Time * 0.01);
+  
   float baseNoise = fbm(vec3(seed.x, seed.y - u_Time * 0.01, 0.));
   float topNoise = baseNoise * fs_Pos.y;
   
-  color = 1. - getGradColor(length(fs_Pos.xy) + u_Time * 0.001 + topNoise * 0.5, u_GradientType);
-
-  // discard top
-  // float topNoise = 1. - perlin2D(vec2(seed.x, seed.y - u_Time * 0.01)) * fs_Pos.y;
+  float timeOffset = u_Time * 0.0004;
+  vec3 color = 1. - getGradColor(length(fs_Pos.xy) + timeOffset + topNoise * 0.5, u_GradientType);
   
   if (topNoise > u_frameThreshold) {discard;}
-  //if (baseNoise * length(fs_Pos) > 0.5) {discard;}
-
-  //color = vec3( -1. * u_frameThreshold);
+  
   out_Col = vec4(color, 1.);
 }
