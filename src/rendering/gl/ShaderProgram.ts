@@ -30,6 +30,9 @@ class ShaderProgram {
   unifViewProj: WebGLUniformLocation;
   unifColor: WebGLUniformLocation;
   unifTime: WebGLUniformLocation;
+  unifGradientType: WebGLUniformLocation;
+  unifSwayLevel: WebGLUniformLocation;
+  unifFrameThreshold: WebGLUniformLocation;
 
   constructor(shaders: Array<Shader>) {
     this.prog = gl.createProgram();
@@ -50,6 +53,9 @@ class ShaderProgram {
     this.unifViewProj   = gl.getUniformLocation(this.prog, "u_ViewProj");
     this.unifColor = gl.getUniformLocation(this.prog, "u_Color");
     this.unifTime = gl.getUniformLocation(this.prog, "u_Time");
+    this.unifGradientType = gl.getUniformLocation(this.prog, "u_GradientType");
+    this.unifSwayLevel = gl.getUniformLocation(this.prog, "u_swayLevel");
+    this.unifFrameThreshold = gl.getUniformLocation(this.prog, "u_frameThreshold");
   }
 
   use() {
@@ -85,7 +91,28 @@ class ShaderProgram {
     if (this.unifColor !== -1) {
       gl.uniform4fv(this.unifColor, color);
     }
-  }
+    }
+
+    setGradientType(type: number) {
+        this.use();
+        if (this.unifGradientType !== -1) {
+            gl.uniform1f(this.unifGradientType, type);
+        }
+    }
+
+    setSwayLevel(level: number) {
+        this.use();
+        if (this.unifSwayLevel !== -1) {
+            gl.uniform1f(this.unifSwayLevel, level);
+        }
+    }
+
+    setFrameThreshold(threshold: number) {
+        this.use();
+        if (this.unifFrameThreshold !== -1) {
+            gl.uniform1f(this.unifFrameThreshold, threshold);
+        }
+    }
 
   setTime(t: number) {
       this.use();

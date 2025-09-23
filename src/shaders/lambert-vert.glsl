@@ -19,6 +19,7 @@ uniform mat4 u_ViewProj;    // The matrix that defines the camera's transformati
                             // We've written a static matrix for you to use for HW2,
                             // but in HW3 you'll have to generate one yourself
 uniform float u_Time;
+uniform float u_swayLevel;
 
 in vec4 vs_Pos;             // The array of vertex positions passed to the shader
 
@@ -131,13 +132,13 @@ void main() {
     
     // general stretch in upper dir
     localPos.y += vs_Nor.y * customFBM(localPos.xyz) * max(0., localPos.y);
-    localPos.xz += sin(u_Time * 0.01 + localPos.y) * 0.15 * max(-0.25, localPos.y);
+    localPos.xz += sin(u_Time * 0.01 + localPos.y) * - u_swayLevel * max(- u_swayLevel - 0.1, localPos.y);
     
-    
+    fs_Pos = localPos.xyz;
     localPos.xyz -= vs_Nor.xyz * (vs_Pos.y * 0.5);
     
     //localPos += (sin(u_Time));
-    fs_Pos = localPos.xyz;
+    
     // end of offsets -------------
     // nor
     mat3 invTranspose = mat3(u_ModelInvTr);

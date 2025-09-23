@@ -14,6 +14,8 @@ precision highp float;
 
 uniform vec4 u_Color; // The color with which to render this instance of geometry.
 uniform float u_Time;
+uniform float u_GradientType;
+uniform float u_frameThreshold;
 
 // These are the interpolated values out of the rasterizer, so you can't know
 // their specific values without knowing the vertices that contributed to them
@@ -98,54 +100,56 @@ float fbm(vec3 p) {
     return fbmSum;
 }
 
-vec3 getGradColor(float t) {
-    // a + b * cos(2 * PI * (c * t + d));
-
-    // // 1. ORANGE~BLUE
-    // vec3 offset = vec3(0.5, 0.5, 0.5);
-    // vec3 amp = vec3(0.5, 0.5, 0.5);
-    // vec3 c = vec3(1, 1, 1);
-    // vec3 d = vec3(0, 0.10, 0.20);
-
-    // 4. LEGO
-    // vec3 offset = vec3(-1.000, -1.000, -1.000);
-    // vec3 amp = vec3(31.384, 31.384, 942.797);
-    // vec3 c = vec3(2.107, 2.107, 2.107);
-    // vec3 d = vec3(-2.275, -1.941, -1.608);
-
-    // [[0.646 0.361 0.266] [0.739 0.558 0.597] [0.733 0.588 0.485] [0.907 1.837 -1.450]]
-    // vec3 offset = vec3(0.646, 0.361, 0.266);
-    // vec3 amp    = vec3(0.739, 0.558, 0.597);
-    // vec3 c      = vec3(0.733, 0.588, 0.485);
-    // vec3 d      = vec3(0.907, 1.837, -1.450);
-
-    // red
-    // vec3 offset = vec3(0.000, 0.500, 0.500);
-    // vec3 amp    = vec3(0.000, 0.500, 0.500);
-    // vec3 c      = vec3(0.000, 0.500, 0.333);
-    // vec3 d      = vec3(0.000, 0.500, 0.667);
-
-    // vec3 offset = vec3(0.678, 0.378, 0.048);
-    // vec3 amp    = vec3(0.848, 1.108, 0.038);
-    // vec3 c      = vec3(-0.382, 0.328, 0.333);
-    // vec3 d      = vec3(0.500, -1.502, 0.667);
+vec3 getGradColor(float t, float gradType) {
+    vec3 offset, amp, c, d;
     
-    // blue
-    // vec3 offset = vec3(0.678, 0.378, 0.048);
-    // vec3 amp    = vec3(0.848, 1.108, 0.038);
-    // vec3 c      = vec3(-0.382, 0.588, 0.333);
-    // vec3 d      = vec3(0.368, -1.633, 0.535);
-    
-    // magenta
-    vec3 offset = vec3(0.938, 0.328, 0.718);
-    vec3 amp    = vec3(0.659, 0.438, 0.328);
-    vec3 c      = vec3(0.388, 0.388, 0.296);
-    vec3 d      = vec3(2.538, 2.478, 0.168);
+    if (gradType < 1.0) {
+        // 1. ORANGE~BLUE
+        offset = vec3(0.5, 0.5, 0.5);
+        amp = vec3(0.5, 0.5, 0.5);
+        c = vec3(1.0, 1.0, 1.0);
+        d = vec3(0.0, 0.10, 0.20);
+    } else if (gradType < 2.0) {
+        // 2. LEGO
+        offset = vec3(-1.000, -1.000, -1.000);
+        amp = vec3(31.384, 31.384, 942.797);
+        c = vec3(2.107, 2.107, 2.107);
+        d = vec3(-2.275, -1.941, -1.608);
+    } else if (gradType < 3.0) {
+        // 3. Custom gradient 1
+        offset = vec3(0.646, 0.361, 0.266);
+        amp    = vec3(0.739, 0.558, 0.597);
+        c      = vec3(0.733, 0.588, 0.485);
+        d      = vec3(0.907, 1.837, -1.450);
+    } else if (gradType < 4.0) {
+        // 4. Red gradient
+        offset = vec3(0.000, 0.500, 0.500);
+        amp    = vec3(0.000, 0.500, 0.500);
+        c      = vec3(0.000, 0.500, 0.333);
+        d      = vec3(0.000, 0.500, 0.667);
+    } else if (gradType < 5.0) {
+        // 5. Custom gradient 2
+        offset = vec3(0.678, 0.378, 0.048);
+        amp    = vec3(0.848, 1.108, 0.038);
+        c      = vec3(-0.382, 0.328, 0.333);
+        d      = vec3(0.500, -1.502, 0.667);
+    } else if (gradType < 6.0) {
+        // 6. Blue gradient
+        offset = vec3(0.678, 0.378, 0.048);
+        amp    = vec3(0.848, 1.108, 0.038);
+        c      = vec3(-0.382, 0.588, 0.333);
+        d      = vec3(0.368, -1.633, 0.535);
+    } else {
+        // 7. Magenta gradient (default)
+        offset = vec3(0.938, 0.328, 0.718);
+        amp    = vec3(0.659, 0.438, 0.328);
+        c      = vec3(0.388, 0.388, 0.296);
+        d      = vec3(2.538, 2.478, 0.168);
+    }
 
-    float r0 = offset.r + amp.r * cos(2. * PI * (c.r * t + d.r));
-    float g0 = offset.g + amp.g * cos(2. * PI * (c.g * t + d.g));
-    float b0 = offset.b + amp.b * cos(2. * PI * (c.b * t + d.b));
-
+    float r0 = offset.r + amp.r * cos(2.0 * PI * (c.r * t + d.r));
+    float g0 = offset.g + amp.g * cos(2.0 * PI * (c.g * t + d.g));
+    float b0 = offset.b + amp.b * cos(2.0 * PI * (c.b * t + d.b));
 
     return vec3(r0, g0, b0);
 }
@@ -159,13 +163,14 @@ void main() {
   float baseNoise = fbm(vec3(seed.x, seed.y - u_Time * 0.01, 0.));
   float topNoise = baseNoise * fs_Pos.y;
   
-  color = 1. - getGradColor(length(fs_Pos.xy) + u_Time * 0.001 + topNoise * 0.5);
+  color = 1. - getGradColor(length(fs_Pos.xy) + u_Time * 0.001 + topNoise * 0.5, u_GradientType);
 
   // discard top
   // float topNoise = 1. - perlin2D(vec2(seed.x, seed.y - u_Time * 0.01)) * fs_Pos.y;
   
-  if (topNoise > 0.5) {discard;}
+  if (topNoise > u_frameThreshold) {discard;}
   //if (baseNoise * length(fs_Pos) > 0.5) {discard;}
 
+  //color = vec3( -1. * u_frameThreshold);
   out_Col = vec4(color, 1.);
 }
