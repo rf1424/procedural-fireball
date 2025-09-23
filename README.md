@@ -1,5 +1,7 @@
 # [Project 1: Noise](https://github.com/CIS-566-Fall-2022/hw01-fireball-base)
 
+### [Live demo link](http://rf1424.github.io/procedural-fireball/)
+
 My vertex shader utilizes two layers of value noise to 
 generate the bumpy surface at the fire's tip. 
 It also insets the tip and applies a wiggly displacement using an oscillating function.
