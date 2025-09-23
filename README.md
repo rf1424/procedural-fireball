@@ -1,5 +1,21 @@
 # [Project 1: Noise](https://github.com/CIS-566-Fall-2022/hw01-fireball-base)
 
+My vertex shader makes use of 2 layers of value noise
+to create the bumy effect at the tip of the fire.
+It also insets the tip, and wiggles it 
+using an oscillating function.
+
+My fragment shader makes use of fbm. I 
+use the uv coordinates and time to get this fbm
+effect in 2D space, and discard certain pixels 
+under the given threshold. I also offset the position using noise, find the length
+of the distorted position and use it to sample color
+from the cosine gradient function by iq.
+
+I made presets of these gradients which the user
+can toggle using gradientType in the GUI.
+
+
 ## Objective
 
 Get comfortable with using WebGL and its shaders to generate an interesting 3D, continuous surface using a multi-octave noise algorithm.
