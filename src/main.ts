@@ -1,4 +1,4 @@
-import {vec3} from 'gl-matrix';
+import {vec2, vec3} from 'gl-matrix';
 const Stats = require('stats-js');
 import * as DAT from 'dat.gui';
 import Icosphere from './geometry/Icosphere';
@@ -83,33 +83,89 @@ function main() {
   const renderer = new OpenGLRenderer(canvas);
   renderer.setClearColor(0., 0., 0., 1);
   gl.enable(gl.DEPTH_TEST);
-
-  const lambert = new ShaderProgram([
+  const baseShader = new ShaderProgram([
     new Shader(gl.VERTEX_SHADER, require('./shaders/lambert-vert.glsl')),
     new Shader(gl.FRAGMENT_SHADER, require('./shaders/lambert-frag.glsl')),
   ]);
+
+  const topShader = new ShaderProgram([
+        new Shader(gl.VERTEX_SHADER, require('./shaders/layer-vert.glsl')),
+        new Shader(gl.FRAGMENT_SHADER, require('./shaders/layer-frag.glsl')),
+  ]);
+  
+  const bloomExtractShader = new ShaderProgram([
+        new Shader(gl.VERTEX_SHADER, require('./shaders/passthroughQuad-vert.glsl')),
+        new Shader(gl.FRAGMENT_SHADER, require('./shaders/bloomExtract-frag.glsl')),
+  ]);
+  
+  const blurrAndCombineShader = new ShaderProgram([
+        new Shader(gl.VERTEX_SHADER, require('./shaders/passthroughQuad-vert.glsl')),
+        new Shader(gl.FRAGMENT_SHADER, require('./shaders/bloomCombine-frag.glsl')),
+  ]);
+  
 
   // This function will be called every frame
   function tick() {
     camera.update();
     stats.begin();
-    gl.viewport(0, 0, window.innerWidth, window.innerHeight);
-    renderer.clear();
+
+    // parameter/attributes updates
     if(controls.tesselations != prevTesselations)
     {
       prevTesselations = controls.tesselations;
       icosphere = new Icosphere(vec3.fromValues(0, 0, 0), 1, prevTesselations);
       icosphere.create();
       }
-
-    // time 
+    const resolution = vec2.fromValues(window.innerWidth, window.innerHeight);
     const time = performance.now();
 
-      renderer.render(camera, lambert, [
-          icosphere
-      // square,
-          // cube
-      ], controls.baseColor, time, controls.gradientType, controls.swayLevel, controls.frameThreshold);
+    // 1. first pass, icosphere fire geometry
+    gl.bindFramebuffer(gl.FRAMEBUFFER, renderer.sceneFramebuffer);
+    
+    gl.viewport(0, 0, window.innerWidth, window.innerHeight);
+    renderer.clear();
+    
+    gl.enable(gl.CULL_FACE);
+    renderer.render(camera, baseShader, [
+       icosphere
+       // square,
+       // cube
+    ], controls.baseColor, time, controls.gradientType, controls.swayLevel, controls.frameThreshold);
+    gl.disable(gl.CULL_FACE);
+    
+    renderer.render(camera, topShader, [
+         icosphere
+    ], controls.baseColor, time, controls.gradientType, controls.swayLevel, controls.frameThreshold);
+
+    
+    // 2. second pass
+    gl.disable(gl.DEPTH_TEST);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, renderer.bloomFramebuffer);
+    
+    gl.viewport(0, 0, window.innerWidth, window.innerHeight);
+    
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, renderer.sceneTexture);
+    bloomExtractShader.setSceneTexture(0);
+    renderer.clear();
+    renderer.renderFullscreenQuad(bloomExtractShader, square, resolution, time);
+    
+
+    // 3. third pass
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null); // null -> screen
+    gl.viewport(0, 0, window.innerWidth, window.innerHeight);
+
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, renderer.sceneTexture);
+    blurrAndCombineShader.setSceneTexture(0);
+
+    gl.activeTexture(gl.TEXTURE1);
+    gl.bindTexture(gl.TEXTURE_2D, renderer.bloomTexture);
+    blurrAndCombineShader.setBloomTexture(1);
+    renderer.clear();
+    renderer.renderFullscreenQuad(blurrAndCombineShader, square, resolution, time);
+    
+    gl.enable(gl.DEPTH_TEST);
     stats.end();
 
     // Tell the browser to call `tick` again whenever it renders a new frame
@@ -118,8 +174,10 @@ function main() {
 
   window.addEventListener('resize', function() {
     renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.resizeBuffers();
     camera.setAspectRatio(window.innerWidth / window.innerHeight);
     camera.updateProjectionMatrix();
+
   }, false);
 
   renderer.setSize(window.innerWidth, window.innerHeight);

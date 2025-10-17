@@ -134,9 +134,11 @@ void main() {
     // pos
     vec4 localPos = vs_Pos;
 
-
+    // second layer edits
+    vec3 OFFSET = vec3(10., 324.5, -20.3);
+    localPos.xyz += vs_Nor.xyz * 0.1;
     // offsets -----------------
-    
+   
     // 0. general stretch in upper dir
     localPos.y += vs_Nor.y * customFBM(localPos.xyz) * max(0., localPos.y);
 
@@ -144,18 +146,9 @@ void main() {
     float swayTime = sin(u_Time * 0.005 + localPos.y) * 0.5 + 0.5;
     swayTime = getBias(swayTime, 0.7);
     localPos.xz += swayTime * - u_swayLevel * max(- u_swayLevel - 0.1, localPos.y);
-
-    // 1.5 popping
-    vec3 dir =vec3(vs_Nor.x, 0., vs_Nor.z);
-    float speed = 1. / 200. * u_Time;
-    float offsetFactor = sin(speed + localPos.y + perlin3D(localPos.xyz));
-                         //+ cos(speed * 7. + localPos.y + perlin3D(localPos.yzx + speed));
-
-    offsetFactor *= 0.1;// * cos(speed);
-    localPos.xyz += dir * offsetFactor;
     
     // 2. tiny bumps
-    vec3 seed = 5. * localPos.xyz + vec3(u_Time / 200., 0., u_Time / 200.);
+    vec3 seed = 5. * localPos.xyz + vec3(u_Time / 200., 0., u_Time / 200.) + OFFSET;
     float amp = customFBM(seed);
     amp *= 0.1;
     vec3 up = vec3(0., 1., 0.);
@@ -168,14 +161,10 @@ void main() {
     localPos.xyz -= vs_Nor.xyz * inset;
 
     // end of offsets -------------
-    
     // nor,pos
-    
+    fs_Pos = localPos.xyz;
     mat3 invTranspose = mat3(u_ModelInvTr);
     fs_Nor = invTranspose * vec3(vs_Nor);  
-    
-    //fs_Pos = vec3(u_ModelInvTr * localPos);
-    fs_Pos = localPos.xyz;
   
     vec4 modelposition = u_Model * localPos; 
     

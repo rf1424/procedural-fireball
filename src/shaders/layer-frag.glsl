@@ -16,7 +16,6 @@ uniform vec4 u_Color; // The color with which to render this instance of geometr
 uniform float u_Time;
 uniform float u_GradientType;
 uniform float u_frameThreshold;
-uniform vec3 u_CamPos;
 
 // These are the interpolated values out of the rasterizer, so you can't know
 // their specific values without knowing the vertices that contributed to them
@@ -188,29 +187,20 @@ vec3 getGradColor(float t, float gradType) {
 
 void main() {
 	
-    vec2 seed = vec2(fs_Pos.x, fs_Pos.y) * 5.;
+    vec3 OFFSET = vec3(10., 324.5, -20.3);
+    vec2 seed = vec2(fs_Pos.x, fs_Pos.y) * 5. + OFFSET.xy;
   
     float baseNoise = fbm(vec3(seed.x, seed.y - u_Time * 0.01, 0.));
-    float topNoise = baseNoise * fs_Pos.y;
+    float topNoise = baseNoise;// * pow(fs_Pos.y, 1.);
   
     float timeOffset = u_Time * 0.0004;
-    vec3 color = 1. - getGradColor(length(fs_Pos.xy) - timeOffset + topNoise * 0.5, u_GradientType);
+    vec3 color = 1. - getGradColor(length(fs_Pos.xy) - timeOffset + OFFSET.x + topNoise * 0.5, 6.);
   
     // color = color + color * pow(1. - length(fs_Pos.xy), 5.);
 
-    if (topNoise > u_frameThreshold) {discard;}
+    if (topNoise > 0.13) {discard;}
+  
     
-    // fresnel
-    vec3 camPosFr = u_CamPos; //0, 0, 5 
-    vec3 viewDir = normalize(fs_Pos - u_CamPos);
-    float fresnel = pow(dot(normalize(fs_Nor), viewDir), .5);
-    // color = vec3(fresnel, fresnel, fresnel);   
-    color *= fresnel;
-    
-
-    
-    //color = vec3(fs_Nor.x, abs(sin(u_Time / 1000. + fs_Pos.x)), 0.);
-    // color = clamp(color, vec3(0.), vec3(1.));
-
+    color = vec3(1.0, 0.3, 0.2);
     out_Col = vec4(color, 1.);
 }

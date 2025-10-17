@@ -1,4 +1,4 @@
-import {vec4, mat4} from 'gl-matrix';
+import {vec2, vec3, vec4, mat4} from 'gl-matrix';
 import Drawable from './Drawable';
 import {gl} from '../../globals';
 
@@ -33,6 +33,11 @@ class ShaderProgram {
   unifGradientType: WebGLUniformLocation;
   unifSwayLevel: WebGLUniformLocation;
   unifFrameThreshold: WebGLUniformLocation;
+  unifCameraPos: WebGLUniformLocation;
+  unifResolution: WebGLUniformLocation;
+
+  unifSceneTexture: WebGLUniformLocation;
+  unifCombineBloomTexture: WebGLUniformLocation;
 
   constructor(shaders: Array<Shader>) {
     this.prog = gl.createProgram();
@@ -56,6 +61,11 @@ class ShaderProgram {
     this.unifGradientType = gl.getUniformLocation(this.prog, "u_GradientType");
     this.unifSwayLevel = gl.getUniformLocation(this.prog, "u_swayLevel");
     this.unifFrameThreshold = gl.getUniformLocation(this.prog, "u_frameThreshold");
+    this.unifCameraPos = gl.getUniformLocation(this.prog, "u_CamPos");
+    this.unifResolution = gl.getUniformLocation(this.prog, "u_Resolution");
+    
+    this.unifSceneTexture = gl.getUniformLocation(this.prog, "u_Scene");
+    this.unifCombineBloomTexture = gl.getUniformLocation(this.prog, "u_Bloom");
   }
 
   use() {
@@ -85,6 +95,14 @@ class ShaderProgram {
       gl.uniformMatrix4fv(this.unifViewProj, false, vp);
     }
   }
+
+  setCameraPosition(pos: vec3) {
+      this.use();
+      if (this.unifCameraPos !== -1) {
+          gl.uniform3fv(this.unifCameraPos, pos);
+      } else {
+      }
+   }
 
   setGeometryColor(color: vec4) {
     this.use();
@@ -120,6 +138,38 @@ class ShaderProgram {
          gl.uniform1f(this.unifTime, t);
       }
   }
+
+  setResolution(resolution: vec2) {
+        this.use();
+        if (this.unifResolution !== -1) {
+             gl.uniform2fv(this.unifResolution, resolution);
+        }
+    }
+  
+  setSceneTexture(textureUnit: number) {
+        this.use();
+        if (this.unifSceneTexture !== -1) {
+            gl.uniform1i(this.unifSceneTexture, textureUnit);
+        }
+  }
+
+  setBloomTexture(textureUnit: number) {
+        this.use();
+        if (this.unifCombineBloomTexture !== -1) {
+            gl.uniform1i(this.unifCombineBloomTexture, textureUnit);
+        }
+  }
+
+  /*
+  setTexture(name: string, texture: WebGLTexture | null, textureUnit : number = 0) {
+        this.use();
+        let location = gl.getUniformLocation(this.prog, name);
+        gl.activeTexture(gl.TEXTURE0 + textureUnit);
+        gl.bindTexture(gl.TEXTURE_2D, texture);
+        
+        gl.uniform1i(location, textureUnit);
+  }
+  */
 
   draw(d: Drawable) {
     this.use();
